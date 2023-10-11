@@ -1,70 +1,73 @@
 from google.cloud import storage
-
+from io import BytesIO
+from PIL import Image
+import numpy as np
 
 json_keyfile_path = '../galvanic-fort-399815-b650c8e36bea.json'
 bucket_name = 'datasolamente'
-image_path = 'data/Splittingfolder_temp/104_Ritterstrasse/104_Ritterstraße_Hyp.png'
+blob_name = 'data/Splittingfolder_temp/104_Ritterstrasse/104_Ritterstraße_Hyp.png'
 
-def read_image_from_gcs(bucket_name, image_path):
-    """Read an image from Google Cloud Storage.
+
+
+
+def read_image_from_gcs(bucket_name, blob_name, keyfile):
+    """
+    Download an image from Google Cloud Storage and return it as a NumPy array.
     """
     try:
-        # Create a client to interact with Google Cloud Storage
-        storage_client = storage.Client.from_service_account_json(json_keyfile_path)
+        # Initialize the Google Cloud Storage client with the service account JSON key.
+        client = storage.Client.from_service_account_json(keyfile)
 
-        # Get a reference to the bucket
-        bucket = storage_client.get_bucket(bucket_name)
+        # Get a reference to the specified bucket and blob.
+        bucket = client.bucket(bucket_name)
+        blob = bucket.blob(blob_name)
 
-        # Get a blob (object) representing the image
-        blob = bucket.blob(image_path)
+        # Download the image as bytes.
+        image_bytes = blob.download_as_bytes()
 
-        # Download the image as bytes
-        image_data = blob.download_as_bytes()
+        # Convert the bytes to a PIL Image.
+        pil_image = Image.open(BytesIO(image_bytes))
 
-        return image_data
+        # Convert the PIL Image to a NumPy array.
+        numpy_array = np.array(pil_image)
 
+        return numpy_array
     except Exception as e:
-        raise Exception(f"Error reading image from Google Cloud Storage: {str(e)}")
+        print(f"Error downloading image from GCS: {e}")
+        return None
 
 
 
-# Example usage:
-if __name__ == "__main__":
-    try:
-        image_bytes = read_image_from_gcs(bucket_name, image_path)
-        # You can now use 'image_bytes' for further processing, such as displaying or saving the image.
-    except Exception as e:
-        print(f"Error: {str(e)}")
-
-
-    # write image bytes to file
-    with open("sample2.png", "wb") as f:
     
-        # Write bytes to file
-        f.write(image_bytes)
 
 
 
 
+def write_dataframe_to_gcs(dataframe, bucket_name, blob_name, json_key_path):
+    """
+        upload a df to  GCS
+    """
+    try:
+        # Initialize the Google Cloud Storage client with the service account JSON key.
+        client = storage.Client.from_service_account_json(json_key_path)
 
-# def write_data_to_gcs(bucket_name, object_name, data):
-#     """Write data to Google Cloud Storage."""
-#     try:
-#         # Create a client using Application Default Credentials (ADC)
-#         storage_client = storage.Client()
+        # Get a reference to the specified bucket.
+        bucket = client.bucket(bucket_name)
 
-#         # Get the bucket and object
-#         bucket = storage_client.get_bucket(bucket_name)
-#         blob = bucket.blob(object_name)
+        # Create a BytesIO buffer to store the DataFrame as CSV data.
+        csv_buffer = BytesIO()
+        dataframe.to_csv(csv_buffer, index=False, encoding='utf-8')
+        csv_data = csv_buffer.getvalue()
 
-#         # Upload the data
-#         blob.upload_from_string(data)
+        # Upload the CSV data to the specified blob in GCS.
+        blob = bucket.blob(blob_name)
+        blob.upload_from_string(csv_data, content_type='text/csv')
 
-#         return True
-
-#     except Exception as e:
-#         print(f"Error writing data to GCS: {e}")
-#         return False
+        print(f"the dataframe {dataframe.name} successfully uploaded to GCS!")
+        return True
+    except Exception as e:
+        print(f"Error writing DataFrame to GCS: {e}")
+        return False
 
 
 
