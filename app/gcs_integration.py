@@ -36,8 +36,6 @@ def read_image_from_gcs(bucket_name, blob_name, keyfile):
         print(f"Error downloading image from GCS: {e}")
         return None
 
-
-
     
 
 
