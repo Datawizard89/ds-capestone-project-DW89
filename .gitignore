@@ -162,3 +162,7 @@ cython_debug/
 
 # the GCP key
 galvanic-fort-399815-b650c8e36bea.json
+
+
+# data folder 
+data/
