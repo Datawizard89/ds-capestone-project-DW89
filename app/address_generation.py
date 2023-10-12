@@ -23,24 +23,6 @@ def generate_address(street_name, plz, low, high):
 
 
 
-# all_addresses = []
-
-# # [("Alt-Lankwitz", "12247", 1, 200), ("Ritterstraße","10969", 1, 125)]
-
-# initial_addresses = pd.read_csv("../data/initial_addresses.csv", header=0)
-# initial_addresses = [("Alt-Lankwitz", "12247", 1, 200)]
-
-# for street, plz, low, high in initial_addresses:
-#     generated = generate_address(street, plz, low, high)
-#     all_addresses += generated
-
-# print(all_addresses)
-
-
-
-
-
-
 
 def get_lat_lon(address_list):
     """
@@ -71,12 +53,6 @@ def get_lat_lon(address_list):
 
 
     return df
-
-
-# df = get_lat_lon(all_addresses)
-
-
-
 
 
 

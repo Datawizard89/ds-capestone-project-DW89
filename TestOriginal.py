@@ -65,14 +65,14 @@ img_for_plot = cv2.cvtColor(img_for_plot, cv2.COLOR_BGR2RGB)
 
 mask_for_plot =cv2.imread(train_mask_dir+msk_list[img_num], 0)
 
-# plt.figure(figsize=(12, 8))
-# plt.subplot(121)
-# plt.imshow(img_for_plot)
-# plt.title('Image')
-# plt.subplot(122)
-# plt.imshow(mask_for_plot, cmap='gray')
-# plt.title('Mask')
-# plt.show()
+plt.figure(figsize=(12, 8))
+plt.subplot(121)
+plt.imshow(img_for_plot)
+plt.title('Image')
+plt.subplot(122)
+plt.imshow(mask_for_plot, cmap='gray')
+plt.title('Mask')
+plt.show()
 
 ################################################################
 
