@@ -2,6 +2,7 @@ from google.cloud import storage
 from io import BytesIO, StringIO
 from PIL import Image
 import numpy as np
+import imageio
 
 json_keyfile_path = '../galvanic-fort-399815-b650c8e36bea.json'
 bucket_name = 'datasolamente'
@@ -22,16 +23,17 @@ def read_image_from_gcs(bucket_name, blob_name, keyfile):
         bucket = client.bucket(bucket_name)
         blob = bucket.blob(blob_name)
 
-        # Download the image as bytes.
-        image_bytes = blob.download_as_bytes()
+        # Download the image 
+        file_data = blob.download_as_string()
 
         # Convert the bytes to a PIL Image.
-        pil_image = Image.open(BytesIO(image_bytes))
+        file_data = blob.download_as_string()
 
-        # Convert the PIL Image to a NumPy array.
-        numpy_array = np.array(pil_image)
+        # Read the image using imageio
+        image_data = imageio.imread(BytesIO(file_data))
 
-        return numpy_array
+        return image_data
+    
     except Exception as e:
         print(f"Error downloading image from GCS: {e}")
         return None
