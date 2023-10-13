@@ -4,9 +4,9 @@ from PIL import Image
 import numpy as np
 import imageio
 
-json_keyfile_path = '../galvanic-fort-399815-b650c8e36bea.json'
-bucket_name = 'datasolamente'
-blob_name = 'data/Splittingfolder_temp/104_Ritterstrasse/104_Ritterstraße_Hyp.png'
+# json_keyfile_path = '../galvanic-fort-399815-b650c8e36bea.json'
+# bucket_name = 'datasolamente'
+# blob_name = 'data/Splittingfolder_temp/104_Ritterstrasse/104_Ritterstraße_Hyp.png'
 
 
 
@@ -93,27 +93,6 @@ def download_csv_as_dataframe(bucket_name, blob_name, json_key_path):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def write_dataframe_to_gcs(dataframe, bucket_name, blob_name, json_key_path):
     """
         upload a df to  GCS
@@ -143,12 +122,6 @@ def write_dataframe_to_gcs(dataframe, bucket_name, blob_name, json_key_path):
 
 
 
-
-
-
-
-
-
 def write_bytes_to_gcs_as_image(bucket_name, blob_name, image_bytes, json_key_path):
     """
     Write image bytes to Google Cloud Storage as an image file using a service account JSON key.
@@ -172,20 +145,20 @@ def write_bytes_to_gcs_as_image(bucket_name, blob_name, image_bytes, json_key_pa
 
 
 
-# Example usage:
-if __name__ == "__main__":
-    # Replace these values with your own.
-    blob_name = "data/sample_iamges/map_image.png"
+# # Example usage:
+# if __name__ == "__main__":
+#     # Replace these values with your own.
+#     blob_name = "data/sample_iamges/map_image.png"
 
-    # Read the image as bytes (for example, from a local file).
-    with open("path/to/your/local/image.jpg", "rb") as f:
-        image_data = f.read()
+#     # Read the image as bytes (for example, from a local file).
+#     with open("path/to/your/local/image.jpg", "rb") as f:
+#         image_data = f.read()
 
-    # Write the image bytes to Google Cloud Storage.
-    success = write_bytes_to_gcs_as_image(bucket_name, blob_name, image_data, json_key_path)
+#     # Write the image bytes to Google Cloud Storage.
+#     success = write_bytes_to_gcs_as_image(bucket_name, blob_name, image_data, json_key_path)
 
-    if success:
-        print("Image written to GCS successfully.")
+#     if success:
+#         print("Image written to GCS successfully.")
 
 
 
