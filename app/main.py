@@ -10,9 +10,9 @@ json_key_path = '../galvanic-fort-399815-b650c8e36bea.json'
 
 if __name__ == '__main__':
 
-    initial_addresses = [("Alt-Lankwitz", "12247", 1, 200)]
+    initial_addresses = [("Alt-Lankwitz", "12247", 1, 200), ("Ritterstraße", "10969", 1, 100), ("Attilastraße", "12105", 1, 100)]
 
-    # generate addresses
+    # generate addressesS
     all_addresses = []
 
     for street, plz, low, high in initial_addresses:
