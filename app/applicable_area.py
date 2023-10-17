@@ -23,6 +23,9 @@ import streamlit as st
 # importing own function 
 import gcs_integration as gcs
 
+############################################ System requirement (temporary) ###################################
+is_apple = False
+
 ###################################################################################################
 ###################loading requirments via get env ################################################
 ###################################################################################################
@@ -43,7 +46,11 @@ CUTOUT_BLOB_BASE                = os.getenv('CUTOUT_BLOB_BASE')                 
 ###################################################################################################
 st.title('Solarmente Berlin App')                                                                  # setting titel of streamlit
 ################## LISTING original photos from the trained folder#################################
-satelite_images                 = './data/pesentation/satelite_images'                             # defining dir for lisr
+if is_apple == True:
+    satelite_images                 = './data/pesentation/satelite_images'
+else:
+    satelite_images                 = '.\\data\\pesentation\\satelite_images'     
+                               # defining dir for lisr
 image_files = sorted([f for f in os.listdir(satelite_images) if f.lower().endswith(('.png'))])             # list for dropdown manue later on 
 ###################################################################################################
 # cutout_images = './data/cutouts'
@@ -147,9 +154,15 @@ def kmeans_photo_generation(cutout_np, cutout_image, num_clusters, colors):
     plt.axis('off')
     plt.show()
     # saving the image 
-    clustered_filename               = f'./data/pesentation/clustered/{cutout_image}_clustered.png' 
+    if is_apple == True:
+        clustered_filename               = f'./data/pesentation/clustered/{cutout_image}_clustered.png' 
+    else:
+        clustered_filename               = f'.\\data\\pesentation\\clustered\\{cutout_image}_clustered.png'     
     cv2.imwrite(clustered_filename, segmented_image)
-    clustered_filename_figure               = f'./data/pesentation/clustered/{cutout_image}_clustered_fig.png'
+    if is_apple == True:
+        clustered_filename_figure               = f'./data/pesentation/clustered/{cutout_image}_clustered_fig.png'
+    else:
+        clustered_filename_figure               = f'.\\data/pesentation\\clustered\\{cutout_image}_clustered_fig.png'    
     plt.savefig(clustered_filename_figure)
     ############################ END Refinement of KMEAN via KNN ###################################
     ################################################################################################
@@ -178,30 +191,95 @@ def surface_calculations(clustered_filename, selected_class):
     ############################ Extracting image data for estimations #############################
     ################################################################################################
     #clustered_image             = clustered_filename#cv2.imread(clustered_filename)                 # opening image file
-    st.write(np.max(clustered_filename))
-    st.write(np.min(clustered_filename))
-    height, width               = clustered_filename.shape                                           # getting dimenesions of image
+    # st.write(np.max(clustered_filename))
+    # st.write(np.min(clustered_filename))
+    height, width               = clustered_filename.shape  
+    # st.write('unique values')                                         # getting dimenesions of image
+    # st.write(clustered_filename)
     total_pixels                = height*width                                                       # calculating total pixel area                                
-    picked_class_pixels         = np.count_nonzero(clustered_filename == selected_class)             # calculating picked area pixels
-    class_zero                  = np.count_nonzero(clustered_filename==0)                            # tunriung any other pixel not belong to class to 0 
+    picked_class_pixels         = np.count_nonzero(clustered_filename == 1)             # calculating picked area pixels
+    class_zero                  = np.count_nonzero(clustered_filename==0)   
+    
+
+    # st.write('total_pixels')                                         # getting dimenesions of image
+    # st.write(total_pixels)
+
+
+    # st.write('picked_class_pixels')                                         # getting dimenesions of image
+    # st.write(picked_class_pixels)
+
+    # st.write('class_zero')                                         # getting dimenesions of image
+    # st.write(class_zero)
+
     ############################ Starting calculation ##############################################
     ################################################################################################
-    percentage_applicable       = round(picked_class_pixels/(total_pixels - class_zero) * 100, 2)    # calculating percentage
-    estmiation_of_size          = round(picked_class_pixels * 0.0089,2)                              # recalculating into m2
-    number_of_panels            = round(estmiation_of_size/(1.65*0.99) * 0.60, 0)                    # estimating number of panles with buffer of .6 empiricale estimated
+    # percentage_applicable       = round(picked_class_pixels/(class_zero) * 100, 2)    # calculating percentage
+  
+    estmiation_of_size          = round(picked_class_pixels * 0.0089, 0)                              # recalculating into m2
+    number_of_panels            = round(estmiation_of_size/(1.65*0.99) * 0.60, 0)                 # estimating number of panles with buffer of .6 empiricale estimated
+    number_of_planels_realistic = round(number_of_panels * 0.60, 0)
     ############################ Estimating energy production ######################################
     ################################################################################################
-    low_band_energy             = 250 * number_of_panels                                             # 250 kwh to 300 kwh
-    high_band_energy            = 350 * number_of_panels
+    low_band_energy             = round(250 * number_of_panels /1000, 0)                                             # 250 kwh to 300 kwh
+    high_band_energy            = round(350 * number_of_panels /1000, 0)
+    average_energy = 29
+
+    st.markdown('________________________________________________________________')
+    st.markdown('### Solar Energy Production Report')
+
+    if average_energy < low_band_energy:
+        energy_message = f"An average household consumes 29 Kwh per day. This property can potentially produce between {low_band_energy}Kwh and \
+            {high_band_energy}Kwh which means it can be fully sustainable."
+    elif average_energy > high_band_energy:
+        energy_message = f"An average household consumes 29 Kwh per day. This property can potentially produce between {low_band_energy}Kwh and \
+            {high_band_energy}Kwh and might need around {average_energy - high_band_energy} to be using the urban electricity network." 
+    else:
+        energy_message = f"An average household consumes 29 Kwh per day. This property can potentially produce between {low_band_energy}Kwh and \
+            {high_band_energy}Kwh and has a {round((average_energy - low_band_energy)/(high_band_energy - low_band_energy)*100, 2)}% chance to be fully sustainable"       
     ############################ Genereating Report ################################################
     ################################################################################################
-    report_msg                  = f'The applicable area is {percentage_applicable}% of the total area which is approximately {estmiation_of_size} sqm. Based on our\
-          understanding we might be able to install at lest {number_of_panels} pieces of solar panels sized 1.65m x 0.99m which can produce\
-            {low_band_energy} - {high_band_energy} watts of electricty per hour.'
-    st.write(report_msg)
+    # report_msg                  = f'The applicable area is percentage_applicable% of the total area which is approximately {estmiation_of_size} sqm. Based on our\
+    #       understanding we might be able to install at lest {number_of_panels} pieces of solar panels sized 1.65m x 0.99m which can produce\
+    #         {low_band_energy} - {high_band_energy} watts of electricty per hour.'
+    # st.write(report_msg)
+
+    ############################ Final report creation #############################################
+    ################################################################################################
+    def scorecard(title, value, color):
+        st.markdown(f'<div style="background-color: {color}; padding: 10px; border-radius: 10px;">'
+                    f'<h3 style="color: white;">{title}</h3>'
+                    f'<h2 style="color: white;">{value}</h2>'
+                    f'</div><br>', unsafe_allow_html=True)
+
+        # Define your metrics
+    metric1_title = "Estimated Applicable Area"
+    metric1_value = f'{estmiation_of_size}(sqm)'
+    metric1_color = "green"
+
+    metric2_title = "Approximate Number of Installable Panels"
+    metric2_value = f' {number_of_planels_realistic} panels'
+    metric2_color = "blue"
+
+    metric3_title = "Energy Generation(daily)"
+    metric3_value = f"Between {low_band_energy} Kwh and {high_band_energy} Kwh"
+    metric3_color = "red"
+
+
+    st.markdown(f'<div style="background-color: #e1e1e6; padding: 10px; border-radius: 10px;">'
+                    f'<p style="padding:10px">{energy_message}</p>'
+                    f'</div><br><br>', unsafe_allow_html=True)
+    
+
+    
+    # Create and display the scorecards
+    st.write("#### Statistics:")
+    scorecard(metric1_title, metric1_value, metric1_color)
+    scorecard(metric2_title, metric2_value, metric2_color)
+    scorecard(metric3_title, metric3_value, metric3_color)
+
     #################################### return ####################################################
     ################################################################################################
-    return report_msg
+    # return report_msg
     ################################END of durface calculation #####################################
 
 ####################################################################################################    
@@ -209,10 +287,10 @@ def surface_calculations(clustered_filename, selected_class):
 ####################################################################################################
 def generate_filtered_image(clustered_image, class_no):
     #clustered image filtered
-    st.write('This the max value of the saved clustered image')
-    st.write(np.max(clustered_image))
-    testimage = clustered_image*51
-    st.image(testimage)
+    # st.write('This the max value of the saved clustered image')
+    # st.write(np.max(clustered_image))
+    # testimage = clustered_image*51
+    # st.image(testimage)
     clustered_image_filtered            = (clustered_image == class_no).astype(int)
     st.image(clustered_image_filtered*51)
 
@@ -231,7 +309,10 @@ def generate_filtered_image(clustered_image, class_no):
     plt.title('K-means Clustering Result')
     plt.axis('off')
     plt.show()
-    filtered_filename                   = f'./data/clustered/_filtered.png'
+    if is_apple == True:
+        filtered_filename                   = f'./data/clustered/_filtered.png'
+    else:
+        filtered_filename                   = f'.\\data\\clustered\\_filtered.png'    
     plt.savefig(filtered_filename)    
     # plt.figure(figsize=(8, 8))
     # plt.imshow(clustered_image,  cmap = cmap, norm=norm)
@@ -264,11 +345,11 @@ def generate_filtered_image(clustered_image, class_no):
 
 # generate the kmeans clustering image
 cutout_image                            = cutout_files[image_index]
-print(cutout_image)
+# print(cutout_image)
 # plt.figure(figsize=(8, 8))
-if st.checkbox('Do you really want to predict?'):
+if st.checkbox('Make a Prediction'):
     clustered_file, clustered_filename_figure  = kmeans_photo_generation(cutout_np, cutout_image, num_clusters=5, colors=COLORS)
-    st.write(clustered_file)
+    # st.write(clustered_file)
     #cv2.imread(clustered_file)*51
     st.image(clustered_filename_figure, use_column_width=True)
 
@@ -297,7 +378,7 @@ selected_class                              = st.selectbox(label="Pick a surface
 #st.write(type(selected_class))
 #st.write(selected_class)
 ######################### generating cropped image for area analysis ##################################################
-if st.checkbox('Tick to choose a class?'):
+if st.checkbox('Submit the Selection'):
     clustered_np                            = cv2.imread(clustered_file, cv2.IMREAD_GRAYSCALE)
     #st.write(np.max(clustered_np))
     #st.write(clustered_file)
@@ -305,7 +386,7 @@ if st.checkbox('Tick to choose a class?'):
     #st.write(clustered_image_filtered)
     #st.image(clustered_file, use_column_width=True)
     #filtered_clustered_np                    = cv2.imread(clustered_image_filtered)
-    if st.checkbox('Do you like to generate a report?'):
+    if st.checkbox('Generate the Final Report'):
         report                       = surface_calculations(clustered_image_filtered, selected_class) #generate_filtered_image(clustered_np, selected_class)
         # st.write(filtered_file )
         #st.image(report, use_column_width=True)
