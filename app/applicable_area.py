@@ -13,7 +13,7 @@ from sklearn.cluster import KMeans
 from sklearn.neighbors import NearestNeighbors
 from sklearn.metrics import silhouette_score
 from sklearn.datasets import load_sample_image
-from yellowbrick.cluster import KElbowVisualizer
+# from yellowbrick.cluster import KElbowVisualizer
 # reading env files for requeirements and stuff 
 from dotenv import load_dotenv
 # Working with dir and such 
@@ -109,6 +109,7 @@ COLORS = ['red', 'green', 'blue', 'orange']
 #######################################################################################################################
 ###################################  Modelling function ###############################################################
 #######################################################################################################################
+@st.cache_data(persist="disk")
 def kmeans_photo_generation(cutout_np, cutout_image, num_clusters, colors):
     ################################### OLD just KMEAN #############################################
     ################################################################################################
@@ -129,7 +130,7 @@ def kmeans_photo_generation(cutout_np, cutout_image, num_clusters, colors):
     kmeans_labels                   = kmeans.labels_                                                        # Getting K-mean labeles
     cluster_centers                 = kmeans.cluster_centers_                                               # getting centers of KMEAN 
     #model = KMeans()
-    visualizer                      = KElbowVisualizer(kmeans, k=(1, 11))                                   # Instantiate the Elobow visualizer
+    # visualizer                      = KElbowVisualizer(kmeans, k=(1, 11))                                   # Instantiate the Elobow visualizer
     # KNN 
     n_neighbors                     = 10                                                                    # Number of nearest neighbors to consider for KNN
     knn                             = NearestNeighbors(n_neighbors=n_neighbors, 
@@ -141,16 +142,17 @@ def kmeans_photo_generation(cutout_np, cutout_image, num_clusters, colors):
     final_labels                    = np.apply_along_axis(lambda x: np.bincount(x).argmax(), 
                                        axis=1, arr=combined_labels)                                         # Calculate the final cluster labels based on a majority vote
     segmented_image                 = final_labels.reshape(cutout_np.shape[:2])                             # Reshape the final labels back into the shape of the original image               
-    st.write(np.max(segmented_image))
+    # st.write(np.max(segmented_image))
     # Visualize the segmented image
     cmap                            = mcolors.ListedColormap(colors)                                        # creating color map for visualization
     bounds                          = np.arange(np.min(segmented_image), np.max(segmented_image) + 1, 1)    # Define class boundaries
     norm                            = mcolors.BoundaryNorm(boundaries=bounds, ncolors=cmap.N, clip=False)
     # plotting the image
     plt.figure(figsize=(8, 8))
-    plt.imshow(segmented_image, cmap=cmap)
+    plt.imshow(segmented_image, cmap='nipy_spectral')
+    # plt.imshow(segmented_image)
     cbar                            = plt.colorbar()
-    plt.title('K-means Clustering and KNN Refinement')
+    plt.title('KNN Refinement')
     plt.axis('off')
     plt.show()
     # saving the image 
@@ -163,6 +165,8 @@ def kmeans_photo_generation(cutout_np, cutout_image, num_clusters, colors):
         clustered_filename_figure               = f'./data/pesentation/clustered/{cutout_image}_clustered_fig.png'
     else:
         clustered_filename_figure               = f'.\\data/pesentation\\clustered\\{cutout_image}_clustered_fig.png'    
+    
+    st.image(clustered_filename_figure)
     plt.savefig(clustered_filename_figure)
     ############################ END Refinement of KMEAN via KNN ###################################
     ################################################################################################
@@ -220,22 +224,25 @@ def surface_calculations(clustered_filename, selected_class):
     number_of_planels_realistic = round(number_of_panels * 0.60, 0)
     ############################ Estimating energy production ######################################
     ################################################################################################
-    low_band_energy             = round(250 * number_of_panels /1000, 0)                                             # 250 kwh to 300 kwh
-    high_band_energy            = round(350 * number_of_panels /1000, 0)
+    low_band_energy             = round(250 * number_of_planels_realistic /1000, 0)                                             # 250 kwh to 300 kwh
+    high_band_energy            = round(350 * number_of_planels_realistic /1000, 0)
     average_energy = 29
 
     st.markdown('________________________________________________________________')
     st.markdown('### Solar Energy Production Report')
 
-    if average_energy < low_band_energy:
-        energy_message = f"An average household consumes 29 Kwh per day. This property can potentially produce between {low_band_energy}Kwh and \
-            {high_band_energy}Kwh which means it can be fully sustainable."
-    elif average_energy > high_band_energy:
-        energy_message = f"An average household consumes 29 Kwh per day. This property can potentially produce between {low_band_energy}Kwh and \
-            {high_band_energy}Kwh and might need around {average_energy - high_band_energy} to be using the urban electricity network." 
-    else:
-        energy_message = f"An average household consumes 29 Kwh per day. This property can potentially produce between {low_band_energy}Kwh and \
-            {high_band_energy}Kwh and has a {round((average_energy - low_band_energy)/(high_band_energy - low_band_energy)*100, 2)}% chance to be fully sustainable"       
+    # if average_energy < low_band_energy:
+    #     energy_message = f"An average household consumes 29 Kwh per day. This property can potentially produce between {low_band_energy}Kwh and \
+    #         {high_band_energy}Kwh which means it can be fully sustainable."
+    # elif average_energy > high_band_energy: 
+    #     energy_message = f"An average household consumes 29 Kwh per day. This property can potentially produce between {low_band_energy}Kwh and \
+    #         {high_band_energy}Kwh and around {average_energy - high_band_energy} Kwh of its needed power has to be provided by the urban electricity network." 
+    # else:
+    #     energy_message = f"An average household consumes 29 Kwh per day. This property can potentially produce between {low_band_energy}Kwh and \
+    #         {high_band_energy}Kwh and has a {round((average_energy - low_band_energy)/(high_band_energy - low_band_energy)*100, 2)}% chance to be fully sustainable"       
+    
+    energy_message = f'Based on the calculations, the solar panels can potentially save between {round(low_band_energy * 0.14,0)}€ and {round(high_band_energy *0.14, 0)}€ per hour.'
+    
     ############################ Genereating Report ################################################
     ################################################################################################
     # report_msg                  = f'The applicable area is percentage_applicable% of the total area which is approximately {estmiation_of_size} sqm. Based on our\
@@ -247,22 +254,22 @@ def surface_calculations(clustered_filename, selected_class):
     ################################################################################################
     def scorecard(title, value, color):
         st.markdown(f'<div style="background-color: {color}; padding: 10px; border-radius: 10px;">'
-                    f'<h3 style="color: white;">{title}</h3>'
-                    f'<h2 style="color: white;">{value}</h2>'
+                    f'<h5 style="color: white;">{title}</h5>'
+                    f'<h5 style="color: white;">{value}</h5>'
                     f'</div><br>', unsafe_allow_html=True)
 
         # Define your metrics
     metric1_title = "Estimated Applicable Area"
-    metric1_value = f'{estmiation_of_size}(sqm)'
+    metric1_value = f'{estmiation_of_size}sqm'
     metric1_color = "green"
 
     metric2_title = "Approximate Number of Installable Panels"
     metric2_value = f' {number_of_planels_realistic} panels'
-    metric2_color = "blue"
+    metric2_color = "green"
 
     metric3_title = "Energy Generation(daily)"
     metric3_value = f"Between {low_band_energy} Kwh and {high_band_energy} Kwh"
-    metric3_color = "red"
+    metric3_color = "green"
 
 
     st.markdown(f'<div style="background-color: #e1e1e6; padding: 10px; border-radius: 10px;">'
@@ -285,6 +292,7 @@ def surface_calculations(clustered_filename, selected_class):
 ####################################################################################################    
 ############################### START Cropped Images ###############################################
 ####################################################################################################
+@st.cache_data(persist="disk")
 def generate_filtered_image(clustered_image, class_no):
     #clustered image filtered
     # st.write('This the max value of the saved clustered image')
@@ -301,7 +309,7 @@ def generate_filtered_image(clustered_image, class_no):
                                                     np.max(clustered_image_filtered) + 1, 1)  # Define class boundaries
     norm                                = mcolors.BoundaryNorm(boundaries=bounds, 
                                                                ncolors=cmap.N, clip=False)
-    cbar                                = plt.colorbar()
+    # cbar                                = plt.colorbar()
 
     # Create a visualization of the clustered image filtered
     plt.figure(figsize=(8, 8))
@@ -351,7 +359,7 @@ if st.checkbox('Make a Prediction'):
     clustered_file, clustered_filename_figure  = kmeans_photo_generation(cutout_np, cutout_image, num_clusters=5, colors=COLORS)
     # st.write(clustered_file)
     #cv2.imread(clustered_file)*51
-    st.image(clustered_filename_figure, use_column_width=True)
+    # st.image(clustered_filename_figure, use_column_width=True)
 
 # Specify the folder path
 # clustered_path = "../data/pesentation/clustered"
@@ -363,9 +371,9 @@ if st.checkbox('Make a Prediction'):
 # st.image(clustered_file, use_column_width=True)
 
 #######################################################################################################################
-left_column.markdown("#### K-Means clustering Initial Outcome")
+left_column.markdown("#### Clustering Outcome")
 st.markdown("""
-### Pick the Surface You Want to Apply the Panels to:\n
+### Pick the Surface You Want to Apply the Panels to\n
 __1.__ Each color is related to a surface. By looking at the colored bar next to the above photo, pick the surface number. 
             
 """)
